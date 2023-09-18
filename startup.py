@@ -9,7 +9,7 @@ import pathlib
 path = os.getcwd()
 os.chdir(os.getcwd()+"/TSmart")
 
-logging.basicConfig(level=logging.CRITICAL, format="%(asctime)s %(name)s - %(message)s", handlers=[logging.StreamHandler()])
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s - %(message)s", handlers=[logging.StreamHandler()])
 logger = logging.getLogger("TSmart_STARTUP")
 
 # Remove old settings file
@@ -36,25 +36,25 @@ with open("settings.py", 'w') as outp:
     outp.write("    ha_device_prefix=\""+str(os.getenv("ha_device_prefix"))+"\"\n")
 
 # replicate the startup script here:
-logging.critical("Starting the Server...")
+logging.info("Starting the Server...")
 serverpid=subprocess.Popen(["python3","server.py"])
-logging.critical("Starting the MQTT CLient...")
+logging.info("Starting the MQTT CLient...")
 mqttClientpid=subprocess.Popen(["python3","mqtt_client.py"])
-logging.critical("Starting Control Read loop every: "+str(os.getenv("self_run_timer"))+"s")
+logging.info("Starting Control Read loop every: "+str(os.getenv("self_run_timer"))+"s")
 readpid=subprocess.Popen(["python3","read.py","self_run"])
 
 while (True):
     if not serverpid.poll()==None:
-        logger.error("UDP Server died. restarting...")
-        logger.critical ("Starting UDP Server")
+        logger.info("UDP Server died. restarting...")
+        logger.info ("Starting UDP Server")
         serverpid=subprocess.Popen(["python3","server.py"])
     if not mqttClientpid.poll()==None:
-        logger.error("MQTT Client died. restarting...")
-        logging.critical("Starting the MQTT Client...")
+        logger.info("MQTT Client died. restarting...")
+        logging.info("Starting the MQTT Client...")
         mqttClientpid=subprocess.Popen(["python3","mqtt_client.py"])
     if not readpid.poll()==None:
-        logger.error("Control read loop died. restarting...")
-        logging.critical("Starting Control Read loop every: "+str(os.getenv("self_run_timer"))+"s")
+        logger.info("Control read loop died. restarting...")
+        logging.info("Starting Control Read loop every: "+str(os.getenv("self_run_timer"))+"s")
         readpid=subprocess.Popen(["python3","read.py","self_run"])
-    sleep(60)
+    sleep(30)
     
