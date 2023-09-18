@@ -29,7 +29,7 @@ logger = logging.getLogger("TSmart_HA_AUTO")
 def to_little(val):
   little_hex = bytearray.fromhex(val)
   little_hex.reverse()
-  logger.debug("Byte array format:", little_hex)
+  logging.info("Byte array format:", little_hex)
 
   str_little = ''.join(format(x, '02x') for x in little_hex)
 
@@ -46,7 +46,7 @@ def publishOutput(array):
             TSmartSettings.first_run=False
             updateFirstRun()
         from mqtt import TSmartMQTT
-        logger.info("Publish all to MQTT")
+        logging.info("Publish all to MQTT")
         if TSmartSettings.MQTT_Topic=="":
             TSmartSettings.MQTT_Topic="TSmart"
         TSmartMQTT.multi_MQTT_publish(str(TSmartSettings.MQTT_Topic+"/"), tempoutput)
@@ -59,10 +59,10 @@ def iterate_dict(array):        # Create a publish safe version of the output (c
         if isinstance(output, dict):
             temp=iterate_dict(output)
             safeoutput[p_load]=temp
-            logger.info('Dealt with '+p_load)
+            logging.info('Dealt with '+p_load)
         elif isinstance(output, tuple):
             if "slot" in str(p_load):
-                logger.info('Converting Timeslots to publish safe string')
+                logging.info('Converting Timeslots to publish safe string')
                 safeoutput[p_load+"_start"]=output[0].strftime("%H:%M")
                 safeoutput[p_load+"_end"]=output[1].strftime("%H:%M")
             else:
@@ -71,7 +71,7 @@ def iterate_dict(array):        # Create a publish safe version of the output (c
                     logger.info('Converting Tuple to multiple publish safe strings')
                     safeoutput[p_load+"_"+str(index)]=str(key)
         elif isinstance(output, datetime.datetime):
-            logger.info('Converting datetime to publish safe string')
+            logging.info('Converting datetime to publish safe string')
             safeoutput[p_load]=output.strftime("%d-%m-%Y %H:%M:%S")
         elif isinstance(output, datetime.time):
             logger.info('Converting time to publish safe string')
@@ -120,7 +120,7 @@ while(True):
     address = bytesAddressPair[1]
     clientMsg = "Message from Client:{}".format(message)
     clientIP  = "Client IP Address:{}".format(address)
-    logger.info(clientIP+": "+clientMsg)
+    logging.info(clientIP+": "+clientMsg)
 
     if address[0]==TSmartSettings.IP_Address:
         response=message.hex()
@@ -141,7 +141,7 @@ while(True):
                 output['Power_W']=0
             output['Smart_State']=TSSmartState[int(response[20:22],16)]
             output['Low_Temperature']=int(to_little(response[22:26]),16)/10
-            logger.info("Data recieved")
+            logging.info("Data recieved")
             output['Auto']="auto"
             output['Thermostat']=""
             errorBuffer=response[26:58]
@@ -164,7 +164,7 @@ while(True):
             else: errors["E05"]=False
             output['Errors']=json.dumps(errors)
 
-            print(errors)
+            logging.error(errors)
             publishOutput(output)
 
 
