@@ -113,58 +113,62 @@ except:
     logging.error("Error: " + str(e))
 
     # Listen for incoming datagrams
-while(True):
+try:
+    while(True):
+    
+        bytesAddressPair = UDPServerSocket.recvfrom(bufferSize)
+        message = bytesAddressPair[0]
+        address = bytesAddressPair[1]
+        clientMsg = "Message from Client:{}".format(message)
+        clientIP  = "Client IP Address:{}".format(address)
+        logging.info(clientIP+": "+clientMsg)
+    
+        if address[0]==TSmartSettings.IP_Address:
+            response=message.hex()
+            if response[0:2]=="f1":
+                messagetype="ControlRead"
+                if response[6:8]=="01":
+                    output['Power']="On" 
+                else: 
+                    output['Power']="Off"
+                output['Set_Point']=int(to_little(response[8:12]),16)/10
+                output['Mode']=TSMode[int(response[12:14],16)]
+                output['High_Temperature']=int(to_little(response[14:18]),16)/10
+                if response[18:20]=="01":
+                    output['Heating']="On"
+                    output['Power_W']=3000
+                else: 
+                    output['Heating']="Off"
+                    output['Power_W']=0
+                output['Smart_State']=TSSmartState[int(response[20:22],16)]
+                output['Low_Temperature']=int(to_little(response[22:26]),16)/10
+                logging.info("Data recieved")
+                output['Auto']="auto"
+                output['Thermostat']=""
+                errorBuffer=response[26:58]
+                errors={}
+                if errorBuffer[0:1]=="1": errors["E01"]=True 
+                else: errors["E01"]=False
+                if errorBuffer[2:1]=="1": errors["E02"]=True
+                else: errors["E02"]=False
+                if errorBuffer[4:1]=="1": errors["E03"]=True
+                else: errors["E03"]=False
+                if errorBuffer[6:1]=="1": errors["E04"]=True
+                else: errors["E04"]=False
+                if errorBuffer[8:1]=="1": errors["W01"]=True
+                else: errors["W01"]=False
+                if errorBuffer[10:1]=="1": errors["W02"]=True
+                else: errors["W02"]=False
+                if errorBuffer[12:1]=="1": errors["W03"]=True
+                else: errors["W03"]=False
+                if errorBuffer[14:1]=="1": errors["E05"]=True
+                else: errors["E05"]=False
+                output['Errors']=json.dumps(errors)
+    
+                logging.error(errors)
+                publishOutput(output)
 
-    bytesAddressPair = UDPServerSocket.recvfrom(bufferSize)
-    message = bytesAddressPair[0]
-    address = bytesAddressPair[1]
-    clientMsg = "Message from Client:{}".format(message)
-    clientIP  = "Client IP Address:{}".format(address)
-    logger.info(clientIP+": "+clientMsg)
-
-    if address[0]==TSmartSettings.IP_Address:
-        response=message.hex()
-        if response[0:2]=="f1":
-            messagetype="ControlRead"
-            if response[6:8]=="01":
-                output['Power']="On" 
-            else: 
-                output['Power']="Off"
-            output['Set_Point']=int(to_little(response[8:12]),16)/10
-            output['Mode']=TSMode[int(response[12:14],16)]
-            output['High_Temperature']=int(to_little(response[14:18]),16)/10
-            if response[18:20]=="01":
-                output['Heating']="On"
-                output['Power_W']=3000
-            else: 
-                output['Heating']="Off"
-                output['Power_W']=0
-            output['Smart_State']=TSSmartState[int(response[20:22],16)]
-            output['Low_Temperature']=int(to_little(response[22:26]),16)/10
-            logger.info("Data recieved")
-            output['Auto']="auto"
-            output['Thermostat']=""
-            errorBuffer=response[26:58]
-            errors={}
-            if errorBuffer[0:1]=="1": errors["E01"]=True 
-            else: errors["E01"]=False
-            if errorBuffer[2:1]=="1": errors["E02"]=True
-            else: errors["E02"]=False
-            if errorBuffer[4:1]=="1": errors["E03"]=True
-            else: errors["E03"]=False
-            if errorBuffer[6:1]=="1": errors["E04"]=True
-            else: errors["E04"]=False
-            if errorBuffer[8:1]=="1": errors["W01"]=True
-            else: errors["W01"]=False
-            if errorBuffer[10:1]=="1": errors["W02"]=True
-            else: errors["W02"]=False
-            if errorBuffer[12:1]=="1": errors["W03"]=True
-            else: errors["W03"]=False
-            if errorBuffer[14:1]=="1": errors["E05"]=True
-            else: errors["E05"]=False
-            output['Errors']=json.dumps(errors)
-
-            print(errors)
-            publishOutput(output)
+except Exception as e:
+    print(f"Caught -> {e}")
 
 
